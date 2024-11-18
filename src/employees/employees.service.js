@@ -29,3 +29,26 @@ exports.findById = async (userId, result = {}) => {
     return result;
   }
 };
+
+exports.getEmployeeList = async (geEmployeeListsDto, result = {}) => {
+  try {
+    const { limit, offset } = geEmployeeListsDto;
+
+    const [employee, count] = await Promise.all([
+      Employees.find()
+        .skip((offset - 1) * limit)
+        .limit(limit)
+        .sort({ createdAt: -1 }),
+      Employees.countDocuments(),
+    ]);
+    result.data = {
+      employee,
+      count,
+      pages: Math.ceil(count / limit),
+    };
+  } catch (ex) {
+    result.ex = ex;
+  } finally {
+    return result;
+  }
+};

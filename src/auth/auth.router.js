@@ -17,7 +17,7 @@ router.post(
 );
 
 router.post(
-  "/refreshToken",
+  "/refreshToken",                   
   [
     validate(authValidation.generateNewAccessToken, { keyByField: true }),
     JWT.verifyRefreshToken,

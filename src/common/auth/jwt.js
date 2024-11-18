@@ -25,7 +25,7 @@ exports.signToken = (user, type) => {
       audience: user.id.toString(),
     };
 
-    const payload = type === JWT_TOKEN_TYPES.ACCESS_TOKEN ? user : {};
+    const payload = type === JWT_TOKEN_TYPES.ACCESS_TOKEN ? user : {}; // because in case of refresh token payload doesnot have any body
 
     jwt.sign(payload, secret, options, (err, token) => {
       if (err) {
