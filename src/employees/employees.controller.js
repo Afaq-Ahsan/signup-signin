@@ -44,7 +44,7 @@ exports.getMyProfile = async (req, res, next) => {
     next(error);
   }
 };
-
+// http://localhost:3000/employees/getAllEmployees/?limit=5&offset=1
 exports.getAllEmployess = async (req, res, next) => {
   try {
     const geEmployeeListsDto = req.query;

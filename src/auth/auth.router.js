@@ -17,12 +17,24 @@ router.post(
 );
 
 router.post(
-  "/refreshToken",                   
+  "/refreshToken",
   [
     validate(authValidation.generateNewAccessToken, { keyByField: true }),
     JWT.verifyRefreshToken,
   ],
   authController.refreshToken
+);
+
+router.post(
+  "/forgetpassword",
+  [validate(authValidation.forgetPassword, { keyByField: true })],
+  authController.forgetPassword
+);
+
+router.post(
+  "/resetpassword",
+  [validate(authValidation.resetPassword, { keyByField: true })],
+  authController.resetPassword
 );
 
 module.exports = router;

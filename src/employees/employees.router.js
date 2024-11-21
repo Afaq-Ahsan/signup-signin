@@ -6,6 +6,6 @@ const { validate } = require("express-validation");
 
 router.get("/", employeesController.getEmployee);
 router.get("/home", [JWT.verifyAccessToken], employeesController.getMyProfile);
-router.get("/getAllEmployees",validate(usersValidation.usersList, { keyByField: true }),employeesController.getAllEmployess)
+router.get("/getAllEmployees",[validate(usersValidation.usersList, { keyByField: true })],employeesController.getAllEmployess)
 
 module.exports = router;

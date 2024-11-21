@@ -1,7 +1,6 @@
 const createError = require("http-errors");
 const { StatusCodes, getStatusCode } = require("http-status-codes");
 const authService = require("./auth.service");
-const empolyeesService = require("../employees/employees.service");
 
 exports.signup = async (req, res, next) => {
   try {
@@ -58,6 +57,47 @@ exports.refreshToken = async (req, res, next) => {
     return res.status(StatusCodes.CREATED).json({
       statusCode: StatusCodes.CREATED,
       message: "Access Token Creation Successful",
+      data: result.data,
+    });
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+exports.forgetPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    const result = await authService.forgetPassword({ email });
+
+    if (result.ex) throw result.ex;
+
+    if (result.userNotFound) {
+      throw new createError(StatusCodes.NOT_FOUND, "User Not found");
+    } else {
+      return res.status(StatusCodes.OK).json({
+        statusCode: StatusCodes.OK,
+        message: "OTP sent Successfully",
+        data: result.data,
+      });
+    }
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const result = await authService.resetPassword(req.body);
+
+    if (result.ex) throw result.ex;
+    if (result.isError) {
+      throw new createError(StatusCodes.BAD_REQUEST, result.message);
+    }
+
+    return res.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "Password reset successfully",
       data: result.data,
     });
   } catch (ex) {

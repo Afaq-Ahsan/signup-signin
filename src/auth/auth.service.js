@@ -3,6 +3,8 @@ const { JWT_TOKEN_TYPES } = require("../../helpers/constants");
 const createError = require("http-errors");
 const { StatusCodes } = require("http-status-codes");
 const JWT = require("../common/auth/jwt");
+const OTP = require("../common/utils/otp");
+const UserForgetPassword = require("./auth.model");
 
 exports.signUp = async (signUpDto, result = {}) => {
   try {
@@ -92,6 +94,78 @@ exports.refreshToken = async (refreshTokenDTO, result = {}) => {
   } catch (ex) {
     result.ex = ex;
   } finally {
+    return result;
+  }
+};
+
+exports.forgetPassword = async (forgetPasswordDTO, result = {}) => {
+  try {
+    const { email } = forgetPasswordDTO;
+
+    const userExist = await empolyeesService.getProfile(email);
+
+    if (!userExist.data) {
+      result.userNotFound = true;
+    } else {
+      const data = await OTP.createOTP(email, userExist._id);
+      result.data = data;
+    }
+  } catch (ex) {
+    result.ex = ex;
+  } finally {
+    return result;
+  }
+};
+
+exports.resetPassword = async (resetPasswordDTO, result = {}) => {
+  try {
+    const {OTP, email, newPassword, confirmPassword } = resetPasswordDTO;
+
+    // Check if user exists
+    const userExist = await empolyeesService.getProfile(email);
+    if (!userExist.data) {
+      result.isError = true;
+      result.message = "User not found";
+    }
+    
+    const OTPAvailable = await UserForgetPassword.findOne({ email });
+    if (!OTPAvailable) {
+      result.isError = true;
+      result.message = "OTP not found";
+    }
+
+    if (OTPAvailable.otp !== OTP || OTPAvailable.expiresAt <= Date.now()) {
+      result.isError = true;
+      result.message = "Invalid or expired OTP";
+    }
+    const user = userExist.data;
+
+    // Check if the new password matches the current password
+    const isSamePassword = await user.comparePassword(newPassword);
+    if (isSamePassword) {
+      result.isError = true;
+      result.message = "New password cannot be the same as the old password";
+    }
+
+    // Check if OTP is valid
+
+    // Update user password
+    user.password = newPassword;
+    await user.save();
+
+    // Clear OTP data
+    OTPAvailable.otp = undefined;
+    OTPAvailable.expiresAt = undefined;
+    await OTPAvailable.save();
+
+    // Success result
+
+    result.data = { email };
+  } catch (ex) {
+    // Capture and store any errors
+    result.ex = ex;
+  } finally {
+    // Return the result object regardless of success or error
     return result;
   }
 };
