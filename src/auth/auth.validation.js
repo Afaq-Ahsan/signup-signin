@@ -32,6 +32,7 @@ module.exports = {
         "string.empty": "Password is required",
         "string.min": "Password must be at least 8 characters long",
       }),
+      rememberMe: Joi.boolean().required(),
     }),
   },
 

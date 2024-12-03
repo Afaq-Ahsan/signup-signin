@@ -10,6 +10,10 @@ exports.signup = async (req, res, next) => {
 
     if (result.ex) throw result.ex;
 
+    if (result.alreadyAvailable) {
+      throw new createError(StatusCodes.CONFLICT, "user already available");
+    }
+
     res.status(StatusCodes.CREATED).json({
       statusCode: StatusCodes.CREATED,
       message: "signUp Successful",
@@ -99,6 +103,25 @@ exports.resetPassword = async (req, res, next) => {
       statusCode: StatusCodes.OK,
       message: "Password reset successfully",
       data: result.data,
+    });
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+exports.logout = async (req, res, next) => {
+  try {
+    const logoutDto = {
+      userId: req.user.id,
+    };
+
+    const result = await authService.logout(logoutDto);
+
+    if (result.ex) throw result.ex;
+
+    return res.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
+      message: "LogOut Successful",
     });
   } catch (ex) {
     next(ex);

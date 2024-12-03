@@ -4,7 +4,7 @@ const createError = require("http-errors");
 
 const { JWT_TOKEN_TYPES } = require("../../../helpers/constants");
 
-exports.signToken = (user, type) => {
+exports.signToken = (user, type, rememberMe) => {
   return new Promise((resolve, reject) => {
     let secret;
 
@@ -14,10 +14,18 @@ exports.signToken = (user, type) => {
       secret = configs.jwt.refreshToken.secret;
     }
 
-    const expiry =
-      type === JWT_TOKEN_TYPES.ACCESS_TOKEN
-        ? configs.jwt.accessToken.ttl
-        : configs.jwt.refreshToken.ttl;
+    let expiry;
+    if (rememberMe) {
+      expiry =
+        type === JWT_TOKEN_TYPES.ACCESS_TOKEN
+          ? configs.jwt.accessToken.ttl
+          : configs.jwt.refreshToken.remeberMeTTL;
+    } else {
+      expiry =
+        type === JWT_TOKEN_TYPES.ACCESS_TOKEN
+          ? configs.jwt.accessToken.ttl
+          : configs.jwt.refreshToken.ttl;
+    }
 
     const options = {
       expiresIn: expiry,

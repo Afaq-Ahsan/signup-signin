@@ -37,4 +37,6 @@ router.post(
   authController.resetPassword
 );
 
+router.delete("/logout",[JWT.verifyAccessToken],authController.logout)
+
 module.exports = router;

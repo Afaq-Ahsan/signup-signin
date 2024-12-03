@@ -1,8 +1,14 @@
 const UserForgetPassword = require("../../auth/auth.model");
-const generateOTP = require("../../../helpers/utils")
+
+
+
+const generateOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // Generates a 6-digit OTP
+};
+
 
 exports.createOTP = async (email, userId) => {
-  const otp = await generateOTP.generateOtp();
+  const otp = await generateOtp();
   const expiresAt = new Date(Date.now() + 60 * 1000); // 1 minute from now
 
   await UserForgetPassword.findOneAndUpdate(

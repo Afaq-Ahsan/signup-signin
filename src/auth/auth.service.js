@@ -5,19 +5,23 @@ const { StatusCodes } = require("http-status-codes");
 const JWT = require("../common/auth/jwt");
 const OTP = require("../common/utils/otp");
 const UserForgetPassword = require("./auth.model");
+const redisClient = require("../../helpers/redis");
+const configs = require("../../configs");
 
 exports.signUp = async (signUpDto, result = {}) => {
   try {
-    const checkAlreadyAvailable = await empolyeesService.getProfile(
+    const employee = await empolyeesService.getProfile(
       signUpDto.email
     );
 
-    if (checkAlreadyAvailable.data)
-      throw createError(StatusCodes.CONFLICT, "Resource already exists");
+    if (employee.data){
+      result.alreadyAvailable = true;
+    }
+      // throw createError(StatusCodes.CONFLICT, "Resource already exists");
 
     const response = await empolyeesService.create(signUpDto);
 
-    if (response.ex) throw response.ex;
+    // if (response.ex) throw response.ex;
 
     result.data = response;
   } catch (ex) {
@@ -29,7 +33,7 @@ exports.signUp = async (signUpDto, result = {}) => {
 
 exports.signIn = async (signInDto, result = {}) => {
   try {
-    const { email, password } = signInDto;
+    const { email, password, rememberMe } = signInDto;
 
     const EmployeeExist = await empolyeesService.getProfile(email);
 
@@ -43,21 +47,47 @@ exports.signIn = async (signInDto, result = {}) => {
       if (!isValid) {
         result.wrongPassword = true;
       } else {
-        const accessToken = await JWT.signToken(
-          {
-            id: user.id,
-            email: user.email,
-          },
-          JWT_TOKEN_TYPES.ACCESS_TOKEN
-        );
+        // const accessToken = await JWT.signToken(
+        //   {
+        //     id: user.id,
+        //     email: user.email,
+        //   },
+        //   JWT_TOKEN_TYPES.ACCESS_TOKEN
+        // );
 
-        const refreshToken = await JWT.signToken(
-          {
-            id: user.id,
-            email: user.email,
-          },
-          JWT_TOKEN_TYPES.REFRESH_TOKEN
-        );
+        // const refreshToken = await JWT.signToken(
+        //   {
+        //     id: user.id,
+        //     email: user.email,
+        //   },
+        //   JWT_TOKEN_TYPES.REFRESH_TOKEN
+        // );
+
+        const [accessToken, refreshToken] = await Promise.all([
+          JWT.signToken(
+            {
+              id: user.id,
+              email: user.email,
+            },
+            JWT_TOKEN_TYPES.ACCESS_TOKEN
+          ),
+          JWT.signToken(
+            {
+              id: user.id,
+              email: user.email,
+            },
+            JWT_TOKEN_TYPES.REFRESH_TOKEN,
+            rememberMe
+          ),
+        ]);
+
+        rememberMe
+          ? await redisClient.set(user.id.toString(), refreshToken, {
+              EX: configs.jwt.refreshToken.redisRemeberMeTTL,
+            })
+          : await redisClient.set(user.id.toString(), refreshToken, {
+              EX: configs.jwt.refreshToken.redisTTL,
+            });
 
         result.data = {
           employeeId: user.id,
@@ -119,7 +149,7 @@ exports.forgetPassword = async (forgetPasswordDTO, result = {}) => {
 
 exports.resetPassword = async (resetPasswordDTO, result = {}) => {
   try {
-    const {OTP, email, newPassword, confirmPassword } = resetPasswordDTO;
+    const { OTP, email, newPassword, confirmPassword } = resetPasswordDTO;
 
     // Check if user exists
     const userExist = await empolyeesService.getProfile(email);
@@ -127,7 +157,7 @@ exports.resetPassword = async (resetPasswordDTO, result = {}) => {
       result.isError = true;
       result.message = "User not found";
     }
-    
+
     const OTPAvailable = await UserForgetPassword.findOne({ email });
     if (!OTPAvailable) {
       result.isError = true;
@@ -166,6 +196,18 @@ exports.resetPassword = async (resetPasswordDTO, result = {}) => {
     result.ex = ex;
   } finally {
     // Return the result object regardless of success or error
+    return result;
+  }
+};
+
+exports.logout = async (logoutDto, result = {}) => {
+  try {
+    const { userId } = logoutDto;
+
+    await redisClient.del(userId.toString());
+  } catch (ex) {
+    result.ex = ex;
+  } finally {
     return result;
   }
 };

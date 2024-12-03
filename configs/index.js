@@ -12,11 +12,18 @@ module.exports = {
       refreshToken: {
         secret: process.env.JWT_REFRESH_TOKEN_SECRET,
         ttl: "7 days",
+        redisTTL: 7 * 86400,
         remeberMeTTL: "30 days",
+        redisRemeberMeTTL: 30 * 86400, //days
+
        
       },
-      issuer: "greenpad.com",
+      issuer: "Afaq Ahsan",
     },
+
+    redis:{
+      host: process.env.REDIS_HOST
+    }
    
   };
   

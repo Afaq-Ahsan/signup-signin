@@ -4,9 +4,12 @@ const {
   applyErrorMdiddlewares,
 } = require("./middlewares/index");
 const { initRoute } = require("./src/routers");
+const redisClient = require("./helpers/redis");
 const app = express();
 
 (async () => {
+  await redisClient.connect();
+
   require("./helpers/db");
 })();
 
